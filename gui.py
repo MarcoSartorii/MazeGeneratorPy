@@ -5,13 +5,20 @@ from enum import Enum
 SEED = random.randint(0, 1000)
 random.seed(SEED)
 
-WIDTH = 1000
-HEIGHT = 700
-N_W_CELLS = 50
-N_H_CELLS = 35
+WIDTH = 600
+HEIGHT = 600
+N_W_CELLS = 15
+N_H_CELLS = 15
 N_BOSS_ROOMS = 10
 W_CELL = WIDTH / N_W_CELLS
 H_CELL = HEIGHT / N_H_CELLS
+
+DOOR_SPAWN_PERCENTAGE = 1 / 3
+UPPER_DOOR_COLOR = "red"
+LOWER_DOOR_COLOR = "lime"
+RIGHT_DOOR_COLOR = "blue"
+LEFT_DOOR_COLOR = "magenta"
+MARGIN_DOOR_PIXELS = 7
 
 
 class AvailableNeighbours(Enum):
@@ -74,12 +81,38 @@ def draw_cell(cell, i, j):
         canvas.create_line(i * W_CELL, (j + 1) * H_CELL, (i + 1) * W_CELL, (j + 1) * H_CELL, fill="black")
 
     if Border.RIGHT in borders:
-        canvas.create_line((i+1) * W_CELL, j * H_CELL, (i + 1) * W_CELL, (j+1) * H_CELL, fill="black")
+        canvas.create_line((i + 1) * W_CELL, j * H_CELL, (i + 1) * W_CELL, (j + 1) * H_CELL, fill="black")
 
     if Border.LEFT in borders:
-        canvas.create_line(i * W_CELL, (j) * H_CELL, i * W_CELL, (j + 1) * H_CELL, fill="black")
+        canvas.create_line(i * W_CELL, j * H_CELL, i * W_CELL, (j + 1) * H_CELL, fill="black")
 
-    # canvas.create_rectangle((i + .45) * W_CELL, (j + .45) * H_CELL, (i + .55) * W_CELL, (j + .55) * H_CELL, fill="red")
+
+
+    """
+    --------------------------
+    Drawing the doors randomly
+    --------------------------
+    """
+
+
+    if random.randint(0, int((1 / DOOR_SPAWN_PERCENTAGE) - 1)) == 0 and board[i][j] != CellType.SPAWN:
+        if board[i][j] == CellType.UP:
+            canvas.create_line(i * W_CELL + 1 + MARGIN_DOOR_PIXELS, j * H_CELL, (i + 1) * W_CELL - 1 - MARGIN_DOOR_PIXELS, j * H_CELL, fill=UPPER_DOOR_COLOR,
+                               width=3)
+        else:
+            if board[i][j] == CellType.DOWN:
+                canvas.create_line(i * W_CELL + 1 + MARGIN_DOOR_PIXELS, (j + 1) * H_CELL, (i + 1) * W_CELL - 1 - MARGIN_DOOR_PIXELS, (j + 1) * H_CELL,
+                                   fill=LOWER_DOOR_COLOR, width=3)
+            else:
+                if board[i][j] == CellType.RIGHT:
+                    canvas.create_line((i + 1) * W_CELL, j * H_CELL + 1 + MARGIN_DOOR_PIXELS, (i + 1) * W_CELL, (j + 1) * H_CELL - 1 - MARGIN_DOOR_PIXELS,
+                                       fill=RIGHT_DOOR_COLOR, width=3)
+                else:
+                    canvas.create_line(i * W_CELL, j * H_CELL + 1 + MARGIN_DOOR_PIXELS, i * W_CELL, (j + 1) * H_CELL - 1 - MARGIN_DOOR_PIXELS,
+                                       fill=LEFT_DOOR_COLOR, width=3)
+
+    if board[i][j] is None:
+        canvas.create_rectangle((i + .45) * W_CELL, (j + .45) * H_CELL, (i + .55) * W_CELL, (j + .55) * H_CELL, fill="red")
 
 
 def print_rect(cnv, i, j, color="black"):
@@ -89,13 +122,16 @@ def print_rect(cnv, i, j, color="black"):
 def print_matrix():
     canvas.create_rectangle(0, 0, WIDTH, HEIGHT, fill="white")
 
+    """
     for i in range(N_W_CELLS):
         x = i * W_CELL
-        #canvas.create_line(x, 0, x, HEIGHT, fill="#DDD", width=2)
+        canvas.create_line(x, 0, x, HEIGHT, fill="#DDD", width=2)
 
     for j in range(N_H_CELLS):
         y = j * H_CELL
-        #canvas.create_line(0, y, WIDTH, y, fill="#DDD", width=2)
+        canvas.create_line(0, y, WIDTH, y, fill="#DDD", width=2)
+    
+    """
 
     for i in range(N_W_CELLS):
         for j in range(N_H_CELLS):
@@ -114,6 +150,31 @@ def has_boss_neighbour(i, j):
     return False
 
 
+def has_too_much_boos_neighbours(i, j):
+    if i == 0 and j == 0:     # TOP_LEFT corner
+        if board[i+1][j] == CellType.BOSS and board[i][j+1] == CellType.BOSS:
+            return True
+    if i == 0 and j == N_H_CELLS - 1:      # BOTTOM_LEFT corner
+        if board[i+1][j] == CellType.BOSS and board[i][j-1] == CellType.BOSS:
+            return True
+    if i == N_W_CELLS - 1 and j == 0:      # TOP_RIGHT corner
+        if board[i-1][j] == CellType.BOSS and board[i][j+1] == CellType.BOSS:
+            return True
+    if i == N_W_CELLS - 1 and j == N_H_CELLS - 1:      # BOTTOM_RIGHT corner
+        if board[i-1][j] == CellType.BOSS and board[i][j-1] == CellType.BOSS:
+            return True
+    """
+    lst = []
+    lst.append(board[i + 1][j])
+    lst.append(board[i - 1][j])
+    lst.append(board[i][j + 1])
+    lst.append(board[i][j - 1])
+    print(lst)  
+    tired of fixing the boss logic spawn, Imma do it tomorrow
+    """
+    return False
+
+
 def spawn_boss_rooms():
     spawned = 0
     while spawned < N_BOSS_ROOMS:
@@ -122,19 +183,24 @@ def spawn_boss_rooms():
         if board[i][j] is None and not has_boss_neighbour(i, j):
             board[i][j] = CellType.BOSS
             spawned += 1
+        for k in range(N_W_CELLS):
+            for h in range(N_H_CELLS):
+                if has_too_much_boos_neighbours(h, k):
+                    board[i][j] = None
+                    spawned -= 1
 
 
-def init_board(spawn_i, spawn_j):
+def init_board(spawn_i_, spawn_j_):
     lst = []
     for i in range(N_W_CELLS):
         for j in range(N_W_CELLS):
-            if i == spawn_i and j == spawn_j:
+            if i == spawn_i_ and j == spawn_j_:
                 lst.append(CellType.SPAWN)
             else:
                 lst.append(None)
         board.append(lst)
         lst = []
-    board[spawn_i][spawn_j] = CellType.SPAWN
+    board[spawn_i_][spawn_j_] = CellType.SPAWN
     spawn_boss_rooms()
 
 
@@ -174,7 +240,6 @@ def gen_cell(i, j):
         board[new_i][new_j] = cell_type
         gen_cell(new_i, new_j)
         neighbours = get_available_neighbours(i, j)
-
 
 
 win = tkinter.Tk()
