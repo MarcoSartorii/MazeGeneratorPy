@@ -5,15 +5,15 @@ from enum import Enum
 SEED = random.randint(0, 1000)
 random.seed(SEED)
 
-WIDTH = 600
-HEIGHT = 600
+WIDTH = 675
+HEIGHT = 675
 N_W_CELLS = 15
 N_H_CELLS = 15
 N_BOSS_ROOMS = 10
 W_CELL = WIDTH / N_W_CELLS
 H_CELL = HEIGHT / N_H_CELLS
 
-DOOR_SPAWN_PERCENTAGE = 1 / 3
+MAX_ROOMS_BOUND = 4
 UPPER_DOOR_COLOR = "red"
 LOWER_DOOR_COLOR = "lime"
 RIGHT_DOOR_COLOR = "blue"
@@ -29,11 +29,11 @@ class AvailableNeighbours(Enum):
 
 
 class CellType(Enum):
-    SPAWN = 0
-    UP = 1
-    DOWN = 2
-    LEFT = 3
-    RIGHT = 4
+    UP = 0
+    DOWN = 1
+    LEFT = 2
+    RIGHT = 3
+    SPAWN = 4
     END = 5
     BOSS = 6
 
@@ -86,33 +86,9 @@ def draw_cell(cell, i, j):
     if Border.LEFT in borders:
         canvas.create_line(i * W_CELL, j * H_CELL, i * W_CELL, (j + 1) * H_CELL, fill="black")
 
-
-
-    """
-    --------------------------
-    Drawing the doors randomly
-    --------------------------
-    """
-
-
-    if random.randint(0, int((1 / DOOR_SPAWN_PERCENTAGE) - 1)) == 0 and board[i][j] != CellType.SPAWN:
-        if board[i][j] == CellType.UP:
-            canvas.create_line(i * W_CELL + 1 + MARGIN_DOOR_PIXELS, j * H_CELL, (i + 1) * W_CELL - 1 - MARGIN_DOOR_PIXELS, j * H_CELL, fill=UPPER_DOOR_COLOR,
-                               width=3)
-        else:
-            if board[i][j] == CellType.DOWN:
-                canvas.create_line(i * W_CELL + 1 + MARGIN_DOOR_PIXELS, (j + 1) * H_CELL, (i + 1) * W_CELL - 1 - MARGIN_DOOR_PIXELS, (j + 1) * H_CELL,
-                                   fill=LOWER_DOOR_COLOR, width=3)
-            else:
-                if board[i][j] == CellType.RIGHT:
-                    canvas.create_line((i + 1) * W_CELL, j * H_CELL + 1 + MARGIN_DOOR_PIXELS, (i + 1) * W_CELL, (j + 1) * H_CELL - 1 - MARGIN_DOOR_PIXELS,
-                                       fill=RIGHT_DOOR_COLOR, width=3)
-                else:
-                    canvas.create_line(i * W_CELL, j * H_CELL + 1 + MARGIN_DOOR_PIXELS, i * W_CELL, (j + 1) * H_CELL - 1 - MARGIN_DOOR_PIXELS,
-                                       fill=LEFT_DOOR_COLOR, width=3)
-
     if board[i][j] is None:
-        canvas.create_rectangle((i + .45) * W_CELL, (j + .45) * H_CELL, (i + .55) * W_CELL, (j + .55) * H_CELL, fill="red")
+        canvas.create_rectangle((i + .45) * W_CELL, (j + .45) * H_CELL, (i + .55) * W_CELL, (j + .55) * H_CELL,
+                                fill="red")
 
 
 def print_rect(cnv, i, j, color="black"):
@@ -123,6 +99,11 @@ def print_matrix():
     canvas.create_rectangle(0, 0, WIDTH, HEIGHT, fill="white")
 
     """
+    -------------------------------
+    uncomment to draw the gray grid
+    -------------------------------
+    """
+    """ 
     for i in range(N_W_CELLS):
         x = i * W_CELL
         canvas.create_line(x, 0, x, HEIGHT, fill="#DDD", width=2)
@@ -130,12 +111,30 @@ def print_matrix():
     for j in range(N_H_CELLS):
         y = j * H_CELL
         canvas.create_line(0, y, WIDTH, y, fill="#DDD", width=2)
-    
     """
 
     for i in range(N_W_CELLS):
         for j in range(N_H_CELLS):
             draw_cell(board[i][j], i, j)
+    for (i, j) in doors:
+        if board[i][j] == CellType.UP:
+            canvas.create_line(i * W_CELL + 1 + MARGIN_DOOR_PIXELS, j * H_CELL,
+                               (i + 1) * W_CELL - 1 - MARGIN_DOOR_PIXELS, j * H_CELL, fill=UPPER_DOOR_COLOR,
+                               width=3)
+        else:
+            if board[i][j] == CellType.DOWN:
+                canvas.create_line(i * W_CELL + 1 + MARGIN_DOOR_PIXELS, (j + 1) * H_CELL,
+                                   (i + 1) * W_CELL - 1 - MARGIN_DOOR_PIXELS, (j + 1) * H_CELL,
+                                   fill=LOWER_DOOR_COLOR, width=3)
+            else:
+                if board[i][j] == CellType.RIGHT:
+                    canvas.create_line((i + 1) * W_CELL, j * H_CELL + 1 + MARGIN_DOOR_PIXELS, (i + 1) * W_CELL,
+                                       (j + 1) * H_CELL - 1 - MARGIN_DOOR_PIXELS,
+                                       fill=RIGHT_DOOR_COLOR, width=3)
+                else:
+                    canvas.create_line(i * W_CELL, j * H_CELL + 1 + MARGIN_DOOR_PIXELS, i * W_CELL,
+                                       (j + 1) * H_CELL - 1 - MARGIN_DOOR_PIXELS,
+                                       fill=LEFT_DOOR_COLOR, width=3)
 
 
 def has_boss_neighbour(i, j):
@@ -150,18 +149,18 @@ def has_boss_neighbour(i, j):
     return False
 
 
-def has_too_much_boos_neighbours(i, j):
-    if i == 0 and j == 0:     # TOP_LEFT corner
-        if board[i+1][j] == CellType.BOSS and board[i][j+1] == CellType.BOSS:
+def has_too_much_boss_neighbours(i, j):
+    if i == 0 and j == 0:  # TOP_LEFT corner
+        if board[i + 1][j] == CellType.BOSS and board[i][j + 1] == CellType.BOSS:
             return True
-    if i == 0 and j == N_H_CELLS - 1:      # BOTTOM_LEFT corner
-        if board[i+1][j] == CellType.BOSS and board[i][j-1] == CellType.BOSS:
+    if i == 0 and j == N_H_CELLS - 1:  # BOTTOM_LEFT corner
+        if board[i + 1][j] == CellType.BOSS and board[i][j - 1] == CellType.BOSS:
             return True
-    if i == N_W_CELLS - 1 and j == 0:      # TOP_RIGHT corner
-        if board[i-1][j] == CellType.BOSS and board[i][j+1] == CellType.BOSS:
+    if i == N_W_CELLS - 1 and j == 0:  # TOP_RIGHT corner
+        if board[i - 1][j] == CellType.BOSS and board[i][j + 1] == CellType.BOSS:
             return True
-    if i == N_W_CELLS - 1 and j == N_H_CELLS - 1:      # BOTTOM_RIGHT corner
-        if board[i-1][j] == CellType.BOSS and board[i][j-1] == CellType.BOSS:
+    if i == N_W_CELLS - 1 and j == N_H_CELLS - 1:  # BOTTOM_RIGHT corner
+        if board[i - 1][j] == CellType.BOSS and board[i][j - 1] == CellType.BOSS:
             return True
     """
     lst = []
@@ -185,7 +184,7 @@ def spawn_boss_rooms():
             spawned += 1
         for k in range(N_W_CELLS):
             for h in range(N_H_CELLS):
-                if has_too_much_boos_neighbours(h, k):
+                if has_too_much_boss_neighbours(h, k):
                     board[i][j] = None
                     spawned -= 1
 
@@ -218,6 +217,8 @@ def get_available_neighbours(i, j):
 
 
 def gen_cell(i, j):
+    sons = []
+
     neighbours = get_available_neighbours(i, j)
     while len(neighbours) > 0:
         new_i = i
@@ -248,6 +249,8 @@ win.resizable(False, False)
 
 spawn_i = random.randint(0, N_W_CELLS - 1)
 spawn_j = random.randint(0, N_H_CELLS - 1)
+doors = []
+boss_doors = []
 board = []
 init_board(spawn_i, spawn_j)
 gen_cell(spawn_i, spawn_j)
@@ -255,6 +258,6 @@ print_matrix()
 
 print("End of generation")
 seed_str = "SEED:" + str(SEED)
-win.title("Maze generation by Marco Sartori " + seed_str)
+win.title("Maze generation by Marco Sartori with a little help from KelpsEater: " + seed_str)
 canvas.pack()
 win.mainloop()
