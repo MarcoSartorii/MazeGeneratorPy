@@ -177,16 +177,17 @@ def has_too_much_boss_neighbours(i, j):
 def spawn_boss_rooms():
     spawned = 0
     while spawned < N_BOSS_ROOMS:
-        i = random.randint(0, N_W_CELLS - 1)
-        j = random.randint(0, N_H_CELLS - 1)
+        i = random.randint(1, N_W_CELLS - 2)
+        j = random.randint(1, N_H_CELLS - 2)
         if board[i][j] is None and not has_boss_neighbour(i, j):
             board[i][j] = CellType.BOSS
+            boss_doors.append((i, j, random.choice([Border.LEFT, Border.RIGHT, Border.DOWN, Border.UP])))
             spawned += 1
         for k in range(N_W_CELLS):
             for h in range(N_H_CELLS):
                 if has_too_much_boss_neighbours(h, k):
                     board[i][j] = None
-                    spawned -= 1
+    print(boss_doors)
 
 
 def init_board(spawn_i_, spawn_j_):
@@ -239,8 +240,40 @@ def gen_cell(i, j):
                     new_j = j - 1
                     cell_type = CellType.DOWN
         board[new_i][new_j] = cell_type
-        gen_cell(new_i, new_j)
+        cells = gen_cell(new_i, new_j)
+        sons.append((new_i, new_j, cells))
         neighbours = get_available_neighbours(i, j)
+
+    sons.sort(key=lambda x: x[2])
+
+    if len(sons) == 3:
+        s = sons[0][2] + sons[1][2] + sons[2][2] + 1
+        if s < MAX_ROOMS_BOUND:
+            return s
+        if s == MAX_ROOMS_BOUND:
+            doors.append((i, j))
+            return 0
+        doors.append((sons[2][0], sons[2][1]))
+
+    if len(sons) >= 2:
+        s = sons[0][2] + sons[1][2] + 1
+        if s < MAX_ROOMS_BOUND:
+            return s
+        if s == MAX_ROOMS_BOUND:
+            doors.append((i, j))
+            return 0
+        doors.append((sons[1][0], sons[1][1]))
+
+    if len(sons) >= 1:
+        s = sons[0][2] + 1
+        if s < MAX_ROOMS_BOUND:
+            return s
+        if s == MAX_ROOMS_BOUND:
+            doors.append((i, j))
+            return 0
+        doors.append((sons[0][0], sons[0][1]))
+
+    return 1
 
 
 win = tkinter.Tk()
