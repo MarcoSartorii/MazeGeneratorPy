@@ -21,4 +21,7 @@ I made little improvements, but I am lazy, and I don't want to update the README
 to check out what my code does download python and execute it. 
 Bye, your friendly neighbourhood programmer.
 
-PS("Neighbourhood" 'cause I used neighbours in my code LOL XD I'm so funny [pls laugh!] )
+P.S.("Neighbourhood" 'cause I used neighbours in my code LOL XD I'm so funny [pls laugh!] )
+
+
+P.P.S. I got a little help from @danieleborgo
