@@ -23,4 +23,4 @@ Bye, your friendly neighbourhood programmer.
 P.S.("Neighbourhood" 'cause I used neighbours in my code LOL XD I'm so funny [pls laugh!] )
 
 
-P.P.S. I got a little help from @danieleborgo, he made improvements for the generation of the doors and fixed other stuff.
+// P.P.S. I got a little help from @danieleborgo, he made improvements for the generation of the doors and fixed other stuff.
